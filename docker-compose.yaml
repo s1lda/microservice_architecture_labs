@@ -61,12 +61,3 @@ networks:
   blog-network:
     driver: bridge
 
-# Dev profile - only runs database for local development
-profiles:
-  - full
-
-# To run only database for development:
-# docker-compose up db
-# 
-# To run full stack:
-# docker-compose --profile full up
