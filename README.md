@@ -292,6 +292,4 @@ curl http://localhost:3000/health
 - `npm run migrate` - Применение миграций
 - `npm run migrate:undo` - Откат миграции
 
-## 📄 Лиценза
-
-ISC
+http://95.215.56.139:3000/api-docs/#/
