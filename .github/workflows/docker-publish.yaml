@@ -48,11 +48,17 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           script: |
             TMUX_SESSION=deploy
-            
-            tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] && git -C '${{ secrets.DEPLOY_PATH }}' pull || git clone https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
-            
+            BRANCH_NAME=${{ github.ref_name }}
+
+            tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] || git clone --branch $BRANCH_NAME https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
+
             tmux send-keys -t $TMUX_SESSION "cd ${{ secrets.DEPLOY_PATH }}" C-m
+
+            tmux send-keys -t $TMUX_SESSION "git checkout $BRANCH_NAME" C-m
+
+            tmux send-keys -t $TMUX_SESSION "git pull origin $BRANCH_NAME" C-m
 
             tmux send-keys -t $TMUX_SESSION "echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin" C-m
             tmux send-keys -t $TMUX_SESSION "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" C-m
-            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d--build" C-m
+            
+            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m
