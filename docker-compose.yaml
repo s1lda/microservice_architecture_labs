@@ -34,6 +34,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3000}
+      API_URL: ${API_URL}
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}

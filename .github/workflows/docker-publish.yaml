@@ -71,6 +71,7 @@ jobs:
             cat <<EOF > .env
             NODE_ENV=production
             PORT=${{ secrets.PORT_APP || 3000 }}
+            API_URL=${{ secrets.API_URL }}
             DB_HOST=db
             DB_PORT=5432
             DB_USER=${{ secrets.DB_USER }}

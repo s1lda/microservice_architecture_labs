@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import sequelize from './config/sequelize';
-import swaggerSpec from './config/swagger';
+import getSwaggerSpec from './config/swagger';
 import userRoutes from './routes/userRoutes';
 import articleRoutes from './routes/articleRoutes';
 import commentRoutes from './routes/commentRoutes';
@@ -24,7 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(getSwaggerSpec(), {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Blog Platform API Docs'
 }));
@@ -32,7 +32,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 // Swagger JSON
 app.get('/api-docs.json', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
+  res.send(getSwaggerSpec());
 });
 
 // Routes

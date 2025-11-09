@@ -1,9 +1,15 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 
-const isDev = process.env.NODE_ENV !== 'production';
+const getSwaggerSpec = () => {
+  const isDev = process.env.NODE_ENV !== 'production';
+  
+  console.log('Generating Swagger spec:');
+  console.log('- NODE_ENV:', process.env.NODE_ENV);
+  console.log('- API_URL:', process.env.API_URL);
+  console.log('- isDev:', isDev);
 
-const options: swaggerJsdoc.Options = {
+  const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
@@ -206,8 +212,9 @@ const options: swaggerJsdoc.Options = {
   apis: isDev 
     ? ['./src/routes/*.ts']
     : [path.join(__dirname, '../routes/*.js')]
+  };
+
+  return swaggerJsdoc(options);
 };
 
-const swaggerSpec = swaggerJsdoc(options);
-
-export default swaggerSpec;
+export default getSwaggerSpec;
