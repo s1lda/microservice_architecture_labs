@@ -51,16 +51,4 @@ jobs:
 
             tmux send-keys -t $TMUX_SESSION "echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin" C-m
             tmux send-keys -t $TMUX_SESSION "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" C-m
-
-            tmux send-keys -t $TMUX_SESSION "cat <<EOF > .env
-            NODE_ENV=production
-            PORT=${{ secrets.PORT_APP || 3000 }}
-            DB_HOST=db
-            DB_PORT=5432 
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            EOF" C-m
-
             tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m 
