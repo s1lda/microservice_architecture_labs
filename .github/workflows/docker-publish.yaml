@@ -1,17 +1,16 @@
-name: Build and Publish Docker Image
+name: Build, Publish and Deploy Production Image
 
 on:
   push:
     branches:
-      - main
-      - lab-1/microservice
+      - lab-1/microservice # Триггер работает ТОЛЬКО на эту ветку
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push: 
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,17 +47,28 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           script: |
             TMUX_SESSION=deploy
-            BRANCH_NAME=${{ github.ref_name }}
-
+            BRANCH_NAME=lab-1/microservice
+            
             tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] || git clone --branch $BRANCH_NAME https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
-
             tmux send-keys -t $TMUX_SESSION "cd ${{ secrets.DEPLOY_PATH }}" C-m
-
             tmux send-keys -t $TMUX_SESSION "git checkout $BRANCH_NAME" C-m
-
             tmux send-keys -t $TMUX_SESSION "git pull origin $BRANCH_NAME" C-m
 
             tmux send-keys -t $TMUX_SESSION "echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin" C-m
             tmux send-keys -t $TMUX_SESSION "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" C-m
-            
+
+
+            tmux send-keys -t $TMUX_SESSION "cat <<EOF > .env
+            NODE_ENV=production
+            PORT=${{ secrets.PORT_APP :-3000}}
+
+            DB_HOST=db
+            DB_PORT=5432
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF" C-m
+
             tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m
