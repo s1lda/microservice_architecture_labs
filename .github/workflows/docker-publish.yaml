@@ -69,4 +69,4 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             EOF" C-m
 
-            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m
+            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m 
