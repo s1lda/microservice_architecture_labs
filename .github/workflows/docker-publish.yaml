@@ -42,7 +42,7 @@ jobs:
           script: |
             TMUX_SESSION=deploy
             BRANCH_NAME=lab-1/microservice
-            
+
             tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] || git clone --branch $BRANCH_NAME https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
             tmux send-keys -t $TMUX_SESSION "cd ${{ secrets.DEPLOY_PATH }}" C-m
             tmux send-keys -t $TMUX_SESSION "git checkout $BRANCH_NAME" C-m
@@ -56,7 +56,7 @@ jobs:
             NODE_ENV=production
             PORT=${{ secrets.PORT_APP || 3000 }}
             DB_HOST=db
-            DB_PORT=5432
+            DB_PORT=5432 
             DB_USER=${{ secrets.DB_USER }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_NAME=${{ secrets.DB_NAME }}
