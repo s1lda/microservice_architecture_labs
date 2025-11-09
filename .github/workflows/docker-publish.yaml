@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           script: | 
-            TMUX_SESSION=deploy
+            TMUX_SESSION=deploy 
             
             tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] && git -C '${{ secrets.DEPLOY_PATH }}' pull || git clone https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
             
