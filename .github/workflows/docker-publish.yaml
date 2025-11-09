@@ -3,7 +3,7 @@ name: Build, Publish and Deploy Production Image
 on:
   push:
     branches:
-      - lab-1/microservice # Триггер работает ТОЛЬКО на эту ветку
+      - lab-1/microservice
 
 env:
   REGISTRY: ghcr.io
@@ -60,7 +60,7 @@ jobs:
 
             tmux send-keys -t $TMUX_SESSION "cat <<EOF > .env
             NODE_ENV=production
-            PORT=${{ secrets.PORT_APP :-3000}}
+            PORT=${{ secrets.PORT_APP || 3000}}
 
             DB_HOST=db
             DB_PORT=5432
