@@ -81,5 +81,5 @@ jobs:
             echo ".env file created successfully."
 
             echo "🚀 Starting application with docker-compose..."
-            docker-compose up -d --build
+            docker-compose -f docker-compose.yaml up -d --build
             echo "✅ Deployment successful!"
