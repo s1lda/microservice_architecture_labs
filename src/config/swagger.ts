@@ -1,4 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -18,12 +21,10 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development сервер'
-      },
-      {
-        url: 'https://api.blogplatform.com',
-        description: 'Production сервер'
+        url: isDev 
+          ? `http://localhost:${process.env.PORT || 3000}`
+          : (process.env.API_URL || 'http://localhost:3000'),
+        description: 'API Server'
       }
     ],
     components: {
@@ -202,7 +203,9 @@ const options: swaggerJsdoc.Options = {
       }
     ]
   },
-  apis: ['./src/routes/*.ts', './src/index.ts']
+  apis: isDev 
+    ? ['./src/routes/*.ts']
+    : [path.join(__dirname, '../routes/*.js')]
 };
 
 const swaggerSpec = swaggerJsdoc(options);

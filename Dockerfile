@@ -23,13 +23,16 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm ci --only=production
+# Install ALL dependencies (including dev for migrations)
+RUN npm ci
+
+# Copy .sequelizerc for migrations
+COPY --from=builder /app/.sequelizerc ./.sequelizerc
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/config ./config
-COPY --from=builder /app/src/migrations ./migrations
+COPY --from=builder /app/src/config ./src/config
+COPY --from=builder /app/src/migrations ./src/migrations
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
