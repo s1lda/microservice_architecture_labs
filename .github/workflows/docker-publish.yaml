@@ -46,7 +46,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          script: |
+          script: | 
             TMUX_SESSION=deploy
             
             tmux send-keys -t $TMUX_SESSION "[ -d '${{ secrets.DEPLOY_PATH }}/.git' ] && git -C '${{ secrets.DEPLOY_PATH }}' pull || git clone https://github.com/${{ env.IMAGE_NAME }}.git '${{ secrets.DEPLOY_PATH }}'" C-m
@@ -55,4 +55,4 @@ jobs:
 
             tmux send-keys -t $TMUX_SESSION "echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin" C-m
             tmux send-keys -t $TMUX_SESSION "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" C-m
-            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m
+            tmux send-keys -t $TMUX_SESSION "docker-compose -f docker-compose.yaml up -d --build" C-m 
