@@ -1,6 +1,44 @@
-# Blog Platform Backend
+# Blog Platform - Микросервисная архитектура
 
-Бэкенд-приложение для блог-платформы, разработанное с использованием Node.js, TypeScript, Express, Sequelize и PostgreSQL.
+## Лабораторная работа №2: Выделение Users в отдельный микросервис
+
+Данная лабораторная работа демонстрирует процесс перехода от монолитной архитектуры к микросервисной с выделением логики пользователей в отдельный сервис.
+
+## 📋 Архитектура
+
+```
+                          ┌─────────────────────────────────────────────────┐
+                          │              API Gateway (Nginx)                 │
+                          │                  Port: 80                        │
+                          └─────────────────────────────────────────────────┘
+                                    │                          │
+                          /api/users/*                   /api/articles/*
+                          /api/user                      /api/articles/:slug/comments/*
+                                    │                          │
+                                    ▼                          ▼
+              ┌─────────────────────────────┐    ┌─────────────────────────────┐
+              │         users-api           │    │          backend            │
+              │     (Users & Auth)          │    │   (Articles & Comments)     │
+              │        Port: 3000           │    │        Port: 3000           │
+              └─────────────────────────────┘    └─────────────────────────────┘
+                          │                                    │
+                          ▼                                    ▼
+              ┌─────────────────────────────┐    ┌─────────────────────────────┐
+              │         db-users            │    │          db-main            │
+              │     PostgreSQL 16           │    │      PostgreSQL 16          │
+              │    Database: app_users      │    │    Database: app_main       │
+              │    Table: users             │    │    Tables: articles,        │
+              │                             │    │            comments         │
+              └─────────────────────────────┘    └─────────────────────────────┘
+```
+
+## 🎯 Цели обучения
+
+- ✅ Выделение части логики монолитного приложения в отдельный микросервис
+- ✅ Концепция Data Ownership (каждый сервис владеет своими данными)
+- ✅ Проектирование архитектуры без прямых внешних ключей между сервисами
+- ✅ Настройка API Gateway (Nginx) для маршрутизации
+- ✅ Сетевая конфигурация в Docker Compose
 
 ## 🛠 Технологический стек
 
@@ -9,187 +47,104 @@
 - **Express** - Веб-фреймворк
 - **Sequelize** - ORM для работы с базой данных
 - **PostgreSQL** - Реляционная база данных
-- **jsonwebtoken** - JWT аутентификация
-- **zod** - Валидация данных
-- **bcrypt** - Хеширование паролей
-- **Swagger** - API документация
-- **Docker** - Контейнеризация приложения
+- **Nginx** - API Gateway
+- **Docker** - Контейнеризация
 
-## 📚 API Документация
+## 🏗️ Структура проекта
 
-После запуска приложения, Swagger документация доступна по адресу:
-
-**http://localhost:3000/api-docs**
-
-В Swagger UI вы можете:
-- Просмотреть все доступные endpoints
-- Протестировать API прямо из браузера
-- Увидеть структуру запросов и ответов
-- Использовать JWT токен для авторизации
-
-## 📋 Функциональность
-
-### Управление пользователями
-- `POST /api/users` - Регистрация нового пользователя
-- `POST /api/users/login` - Аутентификация пользователя
-- `GET /api/user` - Получение текущего пользователя (защищённый маршрут)
-- `PUT /api/user` - Обновление данных пользователя (защищённый маршрут)
-
-### Управление статьями
-- `POST /api/articles` - Создание статьи (защищённый маршрут)
-- `GET /api/articles` - Получение списка всех статей
-- `GET /api/articles/:slug` - Получение статьи по slug
-- `PUT /api/articles/:slug` - Обновление статьи (защищённый маршрут)
-- `DELETE /api/articles/:slug` - Удаление статьи (защищённый маршрут)
-
-### Комментарии
-- `POST /api/articles/:slug/comments` - Добавление комментария (защищённый маршрут)
-- `GET /api/articles/:slug/comments` - Получение комментариев к статье
-- `DELETE /api/articles/:slug/comments/:id` - Удаление комментария (защищённый маршрут)
+```
+microservice_architecture_labs/
+├── backend/                    # Сервис статей и комментариев
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── migrations/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── utils/
+│   │   └── index.ts
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── users_service/              # Сервис пользователей
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── migrations/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── utils/
+│   │   └── index.ts
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── scripts/                    # Скрипты миграции данных
+│   ├── migrate-users.ts
+│   └── migrate-articles.ts
+│
+├── docker-compose.yaml         # Оркестрация всех сервисов
+├── nginx.conf                  # Конфигурация API Gateway
+└── README.md
+```
 
 ## 🚀 Быстрый старт
 
-### Предварительные требования
-- Node.js (v20 или выше)
-- PostgreSQL (v16 или выше)
-- Docker и Docker Compose (опционально)
-
-### Установка зависимостей
+### 1. Запуск всех сервисов
 
 ```bash
-npm install
+# Запуск всех сервисов
+docker-compose up --build
+
+# Или в фоновом режиме
+docker-compose up --build -d
 ```
 
-### Настройка окружения
-
-Создайте файл `.env` на основе `.env.example`:
+### 2. Проверка работоспособности
 
 ```bash
-cp .env.example .env
+# Health check API Gateway
+curl http://localhost/health
+
+# Получить список статей
+curl http://localhost/api/articles
 ```
 
-Отредактируйте `.env` файл с вашими настройками:
+## 📡 API Endpoints
 
-```env
-NODE_ENV=development
-PORT=3000
+### Users API (маршрутизируется через `/api/users/*` и `/api/user`)
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=blog_platform_dev
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/users` | Регистрация пользователя |
+| POST | `/api/users/login` | Аутентификация |
+| GET | `/api/user` | Получить текущего пользователя |
+| PUT | `/api/user` | Обновить текущего пользователя |
+| GET | `/api/users/:id` | Получить пользователя по ID |
+| POST | `/api/users/batch` | Получить пользователей по массиву ID |
 
-JWT_SECRET=your-secret-key-change-in-production
-```
+### Backend API (маршрутизируется через `/api/articles/*`)
 
-### Запуск базы данных (Docker)
-
-Для локальной разработки можно запустить только PostgreSQL:
-
-```bash
-docker-compose -f docker-compose.dev.yaml up -d
-```
-
-### Миграции базы данных
-
-```bash
-npm run migrate
-```
-
-### Запуск приложения
-
-#### Режим разработки
-```bash
-npm run dev
-```
-
-#### Продакшн режим
-```bash
-npm run build
-npm start
-```
-
-## 🐳 Docker
-
-### Запуск полного стека (приложение + база данных)
-
-```bash
-docker-compose --profile full up -d
-```
-
-### Запуск только базы данных для разработки
-
-```bash
-docker-compose up db
-```
-
-или
-
-```bash
-docker-compose -f docker-compose.dev.yaml up -d
-```
-
-### Остановка контейнеров
-
-```bash
-docker-compose down
-```
-
-### Остановка с удалением volumes
-
-```bash
-docker-compose down -v
-```
-
-## 📁 Структура проекта
-
-```
-.
-├── src/
-│   ├── config/          # Конфигурация БД и Sequelize
-│   ├── controllers/     # Контроллеры для обработки запросов
-│   ├── middleware/      # Middleware (auth, validation)
-│   ├── migrations/      # Миграции базы данных
-│   ├── models/          # Модели Sequelize
-│   ├── routes/          # Определение маршрутов
-│   ├── utils/           # Утилиты (JWT, валидация)
-│   └── index.ts         # Точка входа приложения
-├── .env.example         # Пример переменных окружения
-├── .sequelizerc         # Конфигурация Sequelize CLI
-├── docker-compose.yaml  # Docker Compose для полного стека
-├── docker-compose.dev.yaml  # Docker Compose для разработки
-├── Dockerfile           # Dockerfile для приложения
-├── package.json         # Зависимости проекта
-└── tsconfig.json        # Конфигурация TypeScript
-```
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/articles` | Создать статью |
+| GET | `/api/articles` | Получить все статьи |
+| GET | `/api/articles/:slug` | Получить статью по slug |
+| PUT | `/api/articles/:slug` | Обновить статью |
+| DELETE | `/api/articles/:slug` | Удалить статью |
+| POST | `/api/articles/:slug/comments` | Добавить комментарий |
+| GET | `/api/articles/:slug/comments` | Получить комментарии |
+| DELETE | `/api/articles/:slug/comments/:id` | Удалить комментарий |
 
 ## 🔐 Аутентификация
 
-API использует JWT (JSON Web Tokens) для аутентификации. 
+Оба сервиса используют **общий JWT_SECRET** для подписи и валидации токенов:
 
-### Получение токена
-
-После регистрации или входа, вы получите JWT токен в ответе:
-
-```json
-{
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "username": "username",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### Использование токена
-
-Для защищённых маршрутов добавьте токен в заголовок:
-
-```
-Authorization: Bearer <your-token>
-```
+1. **users-api** генерирует JWT токен при регистрации/логине
+2. **backend** валидирует JWT токен (без обращения к БД пользователей)
 
 ## 📝 Примеры запросов
 

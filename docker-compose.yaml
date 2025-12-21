@@ -1,48 +1,85 @@
-version: '3.8'
+version: '3.9'
+
+# =============================================================================
+# Микросервисная архитектура блог-платформы
+# =============================================================================
+# Лабораторная работа №2: Выделение Users в отдельный микросервис
+#
+# Архитектура:
+#   Client → API Gateway (Nginx) → [ backend ]     → db-main   (articles, comments)
+#                                → [ users-api ]   → db-users  (users)
+#
+# Сервисы:
+#   - db-main:     PostgreSQL для основного backend (статьи, комментарии)
+#   - db-users:    PostgreSQL для users-api (пользователи)
+#   - backend:     API для статей и комментариев
+#   - users-api:   API для пользователей и аутентификации
+#   - api-gateway: Nginx для маршрутизации запросов
+# =============================================================================
 
 services:
-  # PostgreSQL Database
-  db:
+  # ===========================================================================
+  # База данных для основного backend (статьи и комментарии)
+  # ===========================================================================
+  db-main:
     image: postgres:16-alpine
-    container_name: blog-platform-db
+    container_name: blog-db-main
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-blog_platform_dev}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      POSTGRES_USER: ${DB_MAIN_USER:-app}
+      POSTGRES_PASSWORD: ${DB_MAIN_PASSWORD:-app}
+      POSTGRES_DB: ${DB_MAIN_NAME:-app_main}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_main_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_MAIN_USER:-app} -d ${DB_MAIN_NAME:-app_main}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - blog-network
+      - internal
 
-  # Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: blog-platform-app
+  # ===========================================================================
+  # База данных для users-api (пользователи)
+  # ===========================================================================
+  db-users:
+    image: postgres:16-alpine
+    container_name: blog-db-users
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
+    environment:
+      POSTGRES_USER: ${DB_USERS_USER:-app}
+      POSTGRES_PASSWORD: ${DB_USERS_PASSWORD:-app}
+      POSTGRES_DB: ${DB_USERS_NAME:-app_users}
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERS_USER:-app} -d ${DB_USERS_NAME:-app_users}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ===========================================================================
+  # Backend сервис (статьи и комментарии)
+  # ===========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blog-backend
+    restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
-      API_URL: ${API_URL}
-      DB_HOST: db
+      PORT: 3000
+      DB_HOST: db-main
       DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-blog_platform_dev}
+      DB_USER: ${DB_MAIN_USER:-app}
+      DB_PASSWORD: ${DB_MAIN_PASSWORD:-app}
+      DB_NAME: ${DB_MAIN_NAME:-app_main}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
     depends_on:
-      db:
+      db-main:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -51,14 +88,76 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - blog-network
-    command: sh -c "npm run migrate && node dist/index.js"
+      - internal
 
-volumes:
-  postgres_data:
-    driver: local
+  # ===========================================================================
+  # Users API сервис (пользователи и аутентификация)
+  # ===========================================================================
+  users-api:
+    build:
+      context: ./users_service
+      dockerfile: Dockerfile
+    container_name: blog-users-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DB_HOST: db-users
+      DB_PORT: 5432
+      DB_USER: ${DB_USERS_USER:-app}
+      DB_PASSWORD: ${DB_USERS_PASSWORD:-app}
+      DB_NAME: ${DB_USERS_NAME:-app_users}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+    depends_on:
+      db-users:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
 
+  # ===========================================================================
+  # API Gateway (Nginx)
+  # ===========================================================================
+  api-gateway:
+    image: nginx:alpine
+    container_name: blog-api-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      users-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - internal
+
+# =============================================================================
+# Сети
+# =============================================================================
 networks:
-  blog-network:
+  internal:
     driver: bridge
+    name: blog-platform-network
 
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  db_main_data:
+    driver: local
+  db_users_data:
+    driver: local
