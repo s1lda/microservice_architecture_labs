@@ -5,7 +5,7 @@ interface CommentAttributes {
   id: number;
   body: string;
   articleId: number;
-  authorId: number; // Логическая ссылка на user.id БЕЗ внешнего ключа
+  authorId: number; 
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -40,12 +40,9 @@ Comment.init(
         key: 'id',
       },
     },
-    // authorId хранится как число БЕЗ внешнего ключа на users
-    // Связь с пользователем реализуется через API, не через БД
     authorId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      // Убран references на users - это ключевое изменение для микросервисной архитектуры
     },
   },
   {

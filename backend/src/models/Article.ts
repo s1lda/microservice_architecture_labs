@@ -57,12 +57,9 @@ Article.init(
       allowNull: true,
       defaultValue: [],
     },
-    // authorId хранится как число БЕЗ внешнего ключа
-    // Связь с пользователем реализуется через API, не через БД
     authorId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      // Убран references - это ключевое изменение для микросервисной архитектуры
     },
   },
   {
